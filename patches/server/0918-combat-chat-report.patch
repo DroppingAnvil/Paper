@@ -1,0 +1,41 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: DroppingAnvil <dr0pping.4nvi1@gmail.com>
+Date: Thu, 23 Jun 2022 21:32:13 -0500
+Subject: [PATCH] Adds option to not relay cryptographic data required for
+ message verification
+
+
+diff --git a/src/main/java/io/papermc/paper/configuration/GlobalConfiguration.java b/src/main/java/io/papermc/paper/configuration/GlobalConfiguration.java
+index 456595e4b7e0c7f50617aa2694b0d2dfc368ab81..f2069700a53b6a51cd253e4f3cc1f65e96eb6dc2 100644
+--- a/src/main/java/io/papermc/paper/configuration/GlobalConfiguration.java
++++ b/src/main/java/io/papermc/paper/configuration/GlobalConfiguration.java
+@@ -261,5 +261,6 @@ public class GlobalConfiguration extends ConfigurationPart {
+         public boolean lagCompensateBlockBreaking = true;
+         public boolean useDimensionTypeForCustomSpawners = false;
+         public boolean strictAdvancementDimensionCheck = false;
++        public boolean relayMessageSignatures = true;
+     }
+ }
+diff --git a/src/main/java/net/minecraft/network/protocol/game/ClientboundPlayerChatPacket.java b/src/main/java/net/minecraft/network/protocol/game/ClientboundPlayerChatPacket.java
+index 285c9197bd716febb158464a1c791337e1d43995..52544ea5f31f944bbdd40bb109da175e95842435 100644
+--- a/src/main/java/net/minecraft/network/protocol/game/ClientboundPlayerChatPacket.java
++++ b/src/main/java/net/minecraft/network/protocol/game/ClientboundPlayerChatPacket.java
+@@ -4,6 +4,8 @@ import java.time.Duration;
+ import java.time.Instant;
+ import java.util.Objects;
+ import java.util.Optional;
++
++import io.papermc.paper.configuration.GlobalConfiguration;
+ import net.minecraft.core.Registry;
+ import net.minecraft.network.FriendlyByteBuf;
+ import net.minecraft.network.chat.ChatSender;
+@@ -47,7 +49,8 @@ public record ClientboundPlayerChatPacket(@org.jetbrains.annotations.Nullable ne
+         buf.writeVarInt(this.typeId);
+         this.sender.write(buf);
+         buf.writeInstant(this.timeStamp);
+-        Crypt.SaltSignaturePair.write(buf, this.saltSignature);
++        //If disabled server will not write required data for cryptographic verification of a message to other players
++        if (!GlobalConfiguration.get().misc.relayMessageSignatures) Crypt.SaltSignaturePair.write(buf, this.saltSignature);
+     }
+ 
+     @Override
